@@ -1,0 +1,91 @@
+# Load required libraries
+library(ggplot2)
+library(reshape2)
+library(ggrepel)
+
+# Function to load data
+loadData <- function(filepath) {
+  data <- read.csv2(filepath)
+  print(head(data, 3))
+  print(str(data)) # print the structure of data
+  return(data)
+}
+data
+# Function to calculate distances and plot the results
+calculateDistance <- function(data, method) {
+  
+  distance <- dist(data, method = method)
+  print(distance)
+  
+  # convert distance object to a dataframe
+  df_dist <- melt(as.matrix(distance), varnames = c("row", "col"))
+  print(df_dist)
+  print(str(df_dist))
+  
+  # contour plot of the distance matrix
+  plotSequence <- seq(from= 1, to = length(df_dist$row), by = 1)
+  
+  ggplot(df_dist, aes(row, col, value)) + 
+    geom_density_2d() + 
+    geom_point() +
+    xlim(-1, 7) +
+    ylim(-1, 8) +
+    geom_text_repel(aes(label = plotSequence, size = 3.5))
+  
+  # remove duplicate and null terms
+  sortedDist <- t(apply(df_dist[,c(1,2)],1,FUN=sort))
+  removeIndex1 <- which(sortedDist[,1] == sortedDist[,2])
+  
+  combinedDist <- paste(sortedDist[,1],sortedDist[,2],sep="|")
+  removeIndex2 <- which(duplicated(combinedDist))
+  
+  # removing self distances and duplicated distances
+  df_dist <- df_dist[-c(removeIndex1,removeIndex2),] 
+  print(df_dist)
+  print(str(df_dist)) # print the structure of the dataframe
+  
+  return(df_dist)
+}
+
+# Function to calculate Mahalanobis distance
+calculateMahalanobis <- function(data) {
+  
+  centerData <- colMeans(data)
+  covData <- cov(data)
+  
+  distMahalanobis <- mahalanobis(x = data , center = centerData , cov = covData)
+  print(distMahalanobis)
+  
+  return(distMahalanobis)
+}
+
+# Set your data path
+dataPath <- "C:/Users/Utente/Desktop/datamatrix.csv"
+
+# Load data
+data <- loadData(dataPath)
+
+# Calculate and plot Euclidean distance
+euclideanDist <- calculateDistance(data, "euclidean")
+plot(euclideanDist, col="blue", pch=20, cex=2, main = "Euclidean Distance")
+
+# Calculate and plot Manhattan distance
+manhattanDist <- calculateDistance(data, "manhattan")
+plot(manhattanDist, col="blue", pch=2, cex=2, main = "Manhattan Distance")
+
+# Calculate Mahalanobis distance
+mahalanobisDist <- calculateMahalanobis(data)
+
+# Scale data
+dataScaled <- scale(data)
+
+# Calculate and plot Euclidean distance for scaled data
+euclideanDistScaled <- calculateDistance(dataScaled, "euclidean")
+plot(euclideanDistScaled, col="blue", pch=20, cex=2, main = "Euclidean Distance for scaled data")
+
+# Calculate and plot Manhattan distance for scaled data
+manhattanDistScaled <- calculateDistance(dataScaled, "manhattan")
+plot(manhattanDistScaled, col="blue", pch=2, cex=2, main = "Manhattan Distance for scaled data")
+
+# Calculate Mahalanobis distance for scaled data
+mahalanobisDistScaled <- calculateMahalanobis(dataScaled)
